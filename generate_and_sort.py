@@ -40,6 +40,12 @@ ESP_CATEGORIES = {
     "Estilo de Vida": ["lifestyle", "food", "cooking", "travel", "home", "gardening", "fashion", "estilo de vida", "viajes y cocina"],
     "Infantil": ["kids", "children", "family", "junior", "baby", "infant", "nifios", "niños", "infantil"],
     "Negocios y Finanzas": ["business", "finance", "money", "market", "bloomberg", "stocks", "wealth", "finanzas", "negocios"],
+    "Noticias": ["news", "weather", "noticias", "headlines", "global news", "noticiero", "actualidad"],
+    "Películas": ["movie", "film", "cinema", "feature", "hollywood", "cine", "peliculas"],
+    "Reality": ["reality", "competition", "game show", "contest"],
+    "TV y Entretenimiento": ["entertainment", "series", "drama", "comedy", "sitcom", "show", "tv", "entretimiento", "musica", "telenovela", "spain", "mexico", "latino", "espanol", "español"]
+}
+
 
     def parse_m3u_content(content):
     channels = []
