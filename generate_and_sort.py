@@ -46,6 +46,19 @@ ESP_CATEGORIES = {
     "TV y Entretenimiento": ["entertainment", "series", "drama", "comedy", "sitcom", "show", "tv", "entretimiento", "musica", "telenovela", "spain", "mexico", "latino", "espanol", "español"]
 }
 
+def fetch_playlists():
+    all_channels = []
+    for url in SOURCE_URLS:
+        try:
+            print(f"Fetching {url}...")
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
+                content = response.read().decode('utf-8', errors='ignore')
+                all_channels.extend(parse_m3u_content(content))
+        except Exception as e:
+            print(f"Error fetching {url}: {e}")
+    return all_channels
+    
 def parse_m3u_content(content):
     channels = []
     current_channel = {}
