@@ -2,7 +2,6 @@ import os
 import re
 import urllib.request
 
-# Define source URLs (BuddyChewChew / i.mjh.nz style lists, excluding Pluto)
 SOURCE_URLS = [
     "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists/plex_all.m3u",
     "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists/samsungtvplus_all.m3u",
@@ -10,67 +9,158 @@ SOURCE_URLS = [
     "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists/tubi_all.m3u"
 ]
 
-# Target English regions/languages
 ENG_CODES = ['us', 'gb', 'ca', 'au', 'nz', 'en']
-# Target Spanish regions/languages
 ESP_CODES = ['es', 'mx', 'latam', 'ar', 'cl', 'co', 'es-mx', 'spa']
 
-# Category mapping patterns (English)
-ENG_CATEGORIES = {
-    "News": ["news", "weather", "noticias", "headlines", "global news"],
-    "Business & Finance": ["business", "finance", "money", "market", "bloomberg", "stocks", "wealth"],
-    "Reality": ["reality", "competition", "game show", "contest", "surviving", "reality tv"],
-    "Documentaries": ["documentary", "docu", "nature", "history", "science", "biography", "true crime docs"],
-    "Lifestyle": ["lifestyle", "food", "cooking", "travel", "home", "gardening", "fashion", "craft"],
-    "Animation": ["adult animation", "animation", "cartoon", "adult swim", "toons"], # Non-kids animation
-    "Anime": ["anime", "crunchyroll", "hidive", "japanese animation"],
-    "Sports": ["sports", "sport", "football", "baseball", "basketball", "soccer", "racing", "wrestling", "fight", "atletletics"],
-    "Kids": ["kids", "children", "family", "nickelodeon", "cartoon network", "disney", "babies", "junior", "toons kids"],
-    "Movies": ["movie", "film", "cinema", "feature", "hollywood", "action movies", "drama movies"],
-    "TV & Entertainment": ["entertainment", "series", "drama", "comedy", "sitcom", "show", "tv", "general"],
-    "Sci-fi and Horror": ["sci-fi", "science fiction", "horror", "thriller", "paranormal", "supernatural", "terror"],
-    "Crime": ["crime", "law", "investigation", "police", "forensic", "detective", "cops"],
-    "Western and Classics": ["western", "classic", "vintage", "retro", "old school", "silent"]
+# Complete mapping dictionary built directly from your category tiles screenshot
+EXACT_CATEGORY_MAP = {
+    # --- ENGLISH CATEGORIES ---
+    # News
+    "News": "News",
+    "News & Opinion": "News",
+    "Local News": "News",
+    "National News": "News",
+    "Global News": "News",
+    "Weather": "News",
+    
+    # Business & Finance
+    "Business News": "Business & Finance",
+    
+    # Reality
+    "Reality": "Reality",
+    "Reality TV": "Reality",
+    "Reality Competition": "Reality",
+    "Game Show": "Reality",
+    "Game Shows": "Reality",
+    "Games & Competition": "Reality",
+    
+    # Documentaries
+    "Documentary": "Documentaries",
+    "Documentaries": "Documentaries",
+    "Nature, History & Sci...": "Documentaries",
+    "Nature": "Documentaries",
+    "Science & Nature": "Documentaries",
+    "Educational": "Documentaries",
+    
+    # Lifestyle
+    "Lifestyle": "Lifestyle",
+    "Lifestyle & Pop Cultu...": "Lifestyle",
+    "Home & Food": "Lifestyle",
+    "Food & Travel": "Lifestyle",
+    "Good Eats": "Lifestyle",
+    "Cooking": "Lifestyle",
+    "Home Improvement": "Lifestyle",
+    "House & Garden": "Lifestyle",
+    "Health": "Lifestyle",
+    
+    # Animation (Adult/General)
+    "Animated": "Animation",
+    "Anime & Gaming": "Animation",
+    
+    # Anime
+    "Anime": "Anime",
+    
+    # Sports
+    "Sports": "Sports",
+    "Sport": "Sports",
+    "Sports & Outdoors": "Sports",
+    "Motor Sports": "Sports",
+    "Auto & Motorsports": "Sports",
+    "Pro Wrestling": "Sports",
+    "Sports On Now": "Sports",
+    "3X3 Basketball": "Sports",
+    "Bowling": "Sports",
+    "Gaming & Tech": "Sports",
+    
+    # Kids
+    "Kids": "Kids",
+    "Kids & Family": "Kids",
+    "Children Music": "Kids",
+    "Card Games": "Kids",
+    
+    # Movies
+    "Movies": "Movies",
+    "Movie Channels": "Movies",
+    "Action & Drama": "Movies",
+    "Romance": "Movies",
+    
+    # TV & Entertainment
+    "TV & Entertainment": "TV & Entertainment",
+    "Entertainment": "TV & Entertainment",
+    "TV Series": "TV & Entertainment",
+    "TV Dramas": "TV & Entertainment",
+    "Comedy": "TV & Entertainment",
+    "Pop Culture": "TV & Entertainment",
+    "Black Entertainment": "TV & Entertainment",
+    "Music": "TV & Entertainment",
+    "Music & Ambiant": "TV & Entertainment",
+    "Ambiance": "TV & Entertainment",
+    "Animals": "TV & Entertainment",
+    "Environment": "TV & Entertainment",
+    "Shopping": "TV & Entertainment",
+    "Auction": "TV & Entertainment",
+    "Faith & Family": "TV & Entertainment",
+    "Other": "TV & Entertainment",
+    "NZ": "TV & Entertainment",
+    "Australia": "TV & Entertainment",
+    "United Kingdom": "TV & Entertainment",
+    "Canada": "TV & Entertainment",
+    "United States": "TV & Entertainment",
+
+    # Sci-fi and Horror
+    "Sci-Fi & Horror": "Sci-fi and Horror",
+    "Sci-Fi & Supernatural": "Sci-fi and Horror",
+    "Horror": "Sci-fi and Horror",
+    "Paranormal": "Sci-fi and Horror",
+    
+    # Crime
+    "Crime": "Crime",
+    "Crime Drama": "Crime",
+    "True Crime": "Crime",
+    "Mystery": "Crime",
+    "Law": "Crime",
+    
+    # Western and Classics
+    "Western & Classic TV": "Western and Classics",
+    "Classic TV": "Western and Classics",
+
+    # --- SPANISH CATEGORIES ---
+    "Noticias": "Noticias",
+    "Entretimiento": "TV y Entretenimiento",
+    "Crimen": "Crimen",
+    "Documentales": "Documentales",
+    "Musica & ambiants": "TV y Entretenimiento",
+    "Deporte": "Deportes",
+    "Telenovela": "TV y Entretenimiento",
+    "Spain": "TV y Entretenimiento",
+    "Cine": "Películas",
+    "Nifios": "Infantil",
+    "Series": "TV y Entretenimiento",
+    "Comedia": "TV y Entretenimiento",
+    "Viajes y Cocina": "Estilo de Vida",
+    "Mexico": "TV y Entretenimiento",
+    "Latino": "TV y Entretenimiento",
+    "Espanol": "TV y Entretenimiento",
+    "Español": "TV y Entretenimiento"
 }
 
-# Category mapping patterns (Spanish counterparts)
-ESP_CATEGORIES = {
-    "Noticias": ["news", "weather", "noticias", "headlines", "global news"],
-    "Negocios y Finanzas": ["business", "finance", "money", "market", "bloomberg", "stocks", "wealth"],
-    "Reality": ["reality", "competition", "game show", "contest"],
-    "Documentales": ["documentary", "docu", "nature", "history", "science", "biography"],
-    "Estilo de Vida": ["lifestyle", "food", "cooking", "travel", "home", "gardening", "fashion"],
-    "Animación": ["adult animation", "animation", "cartoon", "adult swim"],
-    "Anime": ["anime", "crunchyroll"],
-    "Deportes": ["sports", "sport", "football", "baseball", "basketball", "soccer", "racing", "wrestling", "fight"],
-    "Infantil": ["kids", "children", "family", "junior", "baby", "infant"],
-    "Películas": ["movie", "film", "cinema", "feature", "hollywood"],
-    "TV y Entretenimiento": ["entertainment", "series", "drama", "comedy", "sitcom", "show", "tv"],
-    "Ciencia Ficción y Terror": ["sci-fi", "science fiction", "horror", "thriller", "paranormal", "supernatural", "terror"],
-    "Crimen": ["crime", "law", "investigation", "police", "forensic"],
-    "Clásicos y Western": ["western", "classic", "vintage", "retro"]
-}
-
-# Explicit ordering lists
 ENG_ORDER = [
-    "News", "Business & Finance", "Reality", "Documentaries", 
-    "Lifestyle", "Animation", "Anime", "Sports", "Kids", 
-    "Movies", "TV & Entertainment", "Sci-fi and Horror", 
-    "Crime", "Western and Classics", "Uncategorized"
+    "Animation", "Anime", "Business & Finance", "Crime", "Documentaries", 
+    "Kids", "Lifestyle", "Movies", "News", "Reality", "Sci-fi and Horror", 
+    "Sports", "TV & Entertainment", "Western and Classics", "Uncategorized"
 ]
 
 ESP_ORDER = [
-    "Noticias", "Negocios y Finanzas", "Reality", "Documentales", 
-    "Estilo de Vida", "Animación", "Anime", "Deportes", "Infantil", 
-    "Películas", "TV y Entretenimiento", "Ciencia Ficción y Terror", 
-    "Crimen", "Clásicos y Western", "Sin Categoría"
+    "Animación", "Anime", "Ciencia Ficción y Terror", "Clásicos y Western", 
+    "Crimen", "Deportes", "Documentales", "Estilo de Vida", "Infantil", 
+    "Negocios y Finanzas", "Noticias", "Películas", "Reality", 
+    "TV y Entretenimiento", "Sin Categoría"
 ]
 
 def fetch_playlists():
     all_channels = []
     for url in SOURCE_URLS:
         try:
-            print(f"Fetching {url}...")
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req) as response:
                 content = response.read().decode('utf-8', errors='ignore')
@@ -83,24 +173,16 @@ def parse_m3u_content(content):
     channels = []
     current_channel = {}
     lines = content.splitlines()
-    
     for line in lines:
         line = line.strip()
         if line.startswith('#EXTM3U'):
             continue
         elif line.startswith('#EXTINF:'):
             current_channel = {'extinf': line}
-            
-            # Extract group-title
             group_match = re.search(r'group-title="([^"]*)"', line, re.IGNORECASE)
-            current_channel['group'] = group_match.group(1) if group_match else 'Uncategorized'
-            
-            # Extract channel name
+            current_channel['original_group'] = group_match.group(1) if group_match else 'Uncategorized'
             name_match = re.search(r',(.+)$', line)
             current_channel['name'] = name_match.group(1).strip() if name_match else 'Unknown'
-            
-            # Extract tvg-id or language indicators if available
-            lang_match = re.search(r'tvg-chno="([^"]*)"|tvg-id="([^"]*)"', line, re.IGNORECASE)
             current_channel['raw_meta'] = line.lower()
         elif line and not line.startswith('#'):
             current_channel['url'] = line
@@ -110,62 +192,65 @@ def parse_m3u_content(content):
     return channels
 
 def detect_language(channel):
-    meta = (channel['name'] + " " + channel['group'] + " " + channel['raw_meta']).lower()
-    
-    # Check Spanish identifiers
+    meta = (channel['name'] + " " + channel['original_group'] + " " + channel['raw_meta']).lower()
     for code in ESP_CODES:
         if f'[{code}]' in meta or f'({code})' in meta or f' {code} ' in meta or meta.endswith(f' {code}'):
             return 'spanish'
-        if any(term in meta for term in ['span', 'latino', 'mexico', 'espanol', 'castellano']):
+        if any(term in meta for term in ['span', 'latino', 'mexico', 'espanol', 'castellano', 'español']):
             return 'spanish'
-            
-    # Check English identifiers or default standard English sources
     for code in ENG_CODES:
         if f'[{code}]' in meta or f'({code})' in meta or f' {code} ' in meta:
             return 'english'
-            
-    # Default fallback assumption if title is clean standard text without foreign flags
     return 'english'
 
 def categorize_channel(channel, lang):
-    text = (channel['name'] + " " + channel['group']).lower()
-    mapping = ENG_CATEGORIES if lang == 'english' else ESP_CATEGORIES
-    default_cat = "Uncategorized" if lang == 'english' else "Sin Categoría"
+    orig_grp = channel['original_group'].strip()
     
-    for cat, keywords in mapping.items():
-        if any(kw in text for kw in keywords):
-            # Special rule: Separate Kids from general Animation
-            if cat == "Animation" and any(kwd in text for kwd in ['kids', 'children', 'baby', 'junior', 'family']):
-                return "Kids" if lang == 'english' else "Infantil"
-            return cat
-            
-    return default_cat
+    # Check explicit mapping dictionary first
+    if orig_grp in EXACT_CATEGORY_MAP:
+        mapped = EXACT_CATEGORY_MAP[orig_grp]
+        # If language is Spanish, translate English mapped category to Spanish equivalent
+        if lang == 'spanish':
+            trans_map = {
+                "Animation": "Animación",
+                "Anime": "Anime",
+                "Business & Finance": "Negocios y Finanzas",
+                "Crime": "Crimen",
+                "Documentaries": "Documentales",
+                "Kids": "Infantil",
+                "Lifestyle": "Estilo de Vida",
+                "Movies": "Películas",
+                "News": "Noticias",
+                "Reality": "Reality",
+                "Sci-fi and Horror": "Ciencia Ficción y Terror",
+                "Sports": "Deportes",
+                "TV & Entertainment": "TV y Entretenimiento",
+                "Western and Classics": "Clásicos y Western"
+            }
+            return trans_map.get(mapped, "TV y Entretenimiento")
+        return mapped
+        
+    # Fallback to Uncategorized if not found
+    return "Uncategorized" if lang == 'english' else "Sin Categoría"
 
 def save_m3u(channels, filename, sort_order):
-    # Sort by custom group rank, then alphabetically by channel name
     def sort_key(ch):
         grp = ch['mapped_group']
         try:
             rank = sort_order.index(grp)
         except ValueError:
             rank = 99
-        return (rank, grp.lower(), ch['name'].lower())
+        return (rank, ch['name'].lower())
         
     sorted_chs = sorted(channels, key=sort_key)
-    
     with open(filename, 'w', encoding='utf-8') as f:
         f.write('#EXTM3U\n')
         for ch in sorted_chs:
-            # Clean up group-title in the output string to reflect our clean categories
             updated_extinf = re.sub(r'group-title="[^"]*"', f'group-title="{ch["mapped_group"]}"', ch['extinf'])
             f.write(f"{updated_extinf}\n{ch['url']}\n")
-    print(f"Saved {len(sorted_chs)} channels to {filename}")
 
 def main():
     raw_channels = fetch_playlists()
-    print(f"Total raw streams fetched: {len(raw_channels)}")
-    
-    # Deduplicate by stream URL
     seen_urls = set()
     unique_channels = []
     for ch in raw_channels:
@@ -173,8 +258,6 @@ def main():
             seen_urls.add(ch['url'])
             unique_channels.append(ch)
             
-    print(f"Total unique streams after deduplication: {len(unique_channels)}")
-    
     english_list = []
     spanish_list = []
     
@@ -187,15 +270,10 @@ def main():
             ch['mapped_group'] = categorize_channel(ch, 'spanish')
             spanish_list.append(ch)
             
-    # Save individual playlists
     save_m3u(english_list, 'english.m3u', ENG_ORDER)
     save_m3u(spanish_list, 'spanish.m3u', ESP_ORDER)
-    
-    # Combined: English block first, followed by Spanish block sorted identically
-    combined_list = english_list + spanish_list
-    combined_order = ENG_ORDER + ESP_ORDER
-    save_m3u(combined_list, 'combined.m3u', combined_order)
+    save_m3u(english_list + spanish_list, 'combined.m3u', ENG_ORDER + ESP_ORDER)
 
 if __name__ == '__main__':
     main()
-          
+    
