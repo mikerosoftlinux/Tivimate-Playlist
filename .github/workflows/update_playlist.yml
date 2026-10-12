@@ -20,7 +20,7 @@ jobs:
           python-version: '3.10'
 
       - name: Run Scraper and Sorter Script
-        run: python Generate_and_sort.py
+        run: python generate_and_sort.py
 
       - name: Commit and Push Playlists
         run: |
