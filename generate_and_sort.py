@@ -141,6 +141,10 @@ def categorize_channel(channel, lang):
             
     return default_cat
 
+def clean_name(name):
+    name = re.sub(r'\b(east|west|central|hd|fhd|sd|720p|1080p|4k)\b', '', name, flags=re.IGNORECASE)
+    return re.sub(r'[^a-z0-9]', '', name.lower())
+
 def save_m3u(channels, filename, sort_order):
     # Sort by custom group rank, then alphabetically by channel name
     def sort_key(ch):
@@ -165,15 +169,26 @@ def main():
     raw_channels = fetch_playlists()
     print(f"Total raw streams fetched: {len(raw_channels)}")
     
-    # Deduplicate by stream URL
+    # Layer 1: Deduplicate by stream URL
     seen_urls = set()
-    unique_channels = []
+    unique_by_url = []
     for ch in raw_channels:
         if ch['url'] not in seen_urls:
             seen_urls.add(ch['url'])
+            unique_by_url.append(ch)
+            
+    # Layer 2: Deduplicate by normalized channel name + language to stop back-to-back spam feeds
+    seen_names = set()
+    unique_channels = []
+    for ch in unique_by_url:
+        lang_detect = detect_language(ch)
+        name_key = (lang_detect, clean_name(ch['name']))
+        
+        if clean_name(ch['name']) in ['', 'unknown', 'channel'] or name_key not in seen_names:
+            seen_names.add(name_key)
             unique_channels.append(ch)
             
-    print(f"Total unique streams after deduplication: {len(unique_channels)}")
+    print(f"Total unique streams after name & URL deduplication: {len(unique_channels)}")
     
     english_list = []
     spanish_list = []
