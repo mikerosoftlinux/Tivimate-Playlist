@@ -2,7 +2,7 @@ name: Hourly M3U Scraper and Sorter
 
 on:
   schedule:
-    - cron: '0 */2 * * *' # Runs every 2 hours
+    - cron: '0 * * * *' # Runs every hour
   workflow_dispatch:
 
 jobs:
@@ -12,10 +12,10 @@ jobs:
       contents: write
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.10'
 
@@ -27,5 +27,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add english.m3u spanish.m3u combined.m3u
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update & sort playlists [skip ci]" && git push origin main --force)
-          
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Hourly auto-update & sort playlists [skip ci]" && git push)
