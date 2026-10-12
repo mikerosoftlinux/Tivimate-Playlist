@@ -46,8 +46,7 @@ ESP_CATEGORIES = {
     "TV y Entretenimiento": ["entertainment", "series", "drama", "comedy", "sitcom", "show", "tv", "entretimiento", "musica", "telenovela", "spain", "mexico", "latino", "espanol", "español"]
 }
 
-
-    def parse_m3u_content(content):
+def parse_m3u_content(content):
     channels = []
     current_channel = {}
     lines = content.splitlines()
